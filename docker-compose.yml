@@ -1,0 +1,14 @@
+services:
+  web:
+    build:
+      context: .
+      target: web
+    ports:
+      # 宿主端口由 WEB_PORT 覆盖，默认 8080
+      - "${WEB_PORT:-8080}:80"
+
+  # 一次性验收服务：运行完整验收（构建 + Vitest + Playwright）后退出
+  verify:
+    build:
+      context: .
+      target: verify

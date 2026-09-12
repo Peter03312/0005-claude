@@ -1,0 +1,257 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --border: #d8dee6;
+  --ink: #1f2733;
+  --muted: #5d6b7d;
+  --accent: #1d6fd1;
+  --overlap-bg: #fff4d6;
+  --overlap-border: #e0a800;
+  --ok: #1e8e5a;
+  --err: #c0392b;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+}
+
+.app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+header h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+header p {
+  margin: 0 0 20px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 720px) {
+  .inputs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roll-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roll-title {
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 180px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.hint {
+  color: var(--muted);
+  text-align: center;
+  padding: 24px 0;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.panel h3 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+}
+
+.panel-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.panel.error {
+  border-color: var(--err);
+  background: #fdf0ee;
+}
+
+.panel.error h2 {
+  color: var(--err);
+}
+
+.panel.error p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.alignment-scroll {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+table.alignment {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+table.alignment th {
+  position: sticky;
+  top: 0;
+  background: #eef2f7;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+table.alignment td {
+  padding: 4px 12px;
+  border-bottom: 1px solid #eef1f5;
+  min-height: 24px;
+}
+
+table.alignment tr.overlap td {
+  background: var(--overlap-bg);
+  box-shadow: inset 0 0 0 1px var(--overlap-border);
+}
+
+.frame-cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.line-no {
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 2.5em;
+  text-align: right;
+}
+
+.result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 40px;
+  margin: 0 0 8px;
+}
+
+.result-meta dt {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.result-meta dd {
+  margin: 0;
+  font-size: 16px;
+}
+
+.result-meta code {
+  font-family: var(--mono);
+  background: #eef2f7;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.result-meta .arrow {
+  margin: 0 8px;
+  color: var(--muted);
+}
+
+.final-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.frame {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #f7f9fb;
+}
+
+.frame.overlap {
+  background: var(--overlap-bg);
+  border-color: var(--overlap-border);
+}
+
+.frame.right-only {
+  background: #e6f4ec;
+  border-color: var(--ok);
+}
+
+.seam-marker {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.legend {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
