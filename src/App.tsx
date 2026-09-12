@@ -1,10 +1,17 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   computeSplice,
   MIN_OVERLAP,
   type SpliceError,
   type SpliceSuccess,
 } from './lib/splice';
+import {
+  loadDraft,
+  removeDraft,
+  saveDraft,
+  type DraftLoadOutcome,
+  type DraftStorage,
+} from './lib/draft';
 
 const SIDE_LABEL = { left: '左卷', right: '右卷' } as const;
 
@@ -144,12 +151,59 @@ function ResultView({ outcome }: { outcome: SpliceSuccess }) {
   );
 }
 
+/** 访问 localStorage；隐私模式等场景下取值本身可能抛错，此时视为不可用 */
+function getStorage(): DraftStorage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function formatSavedAt(timestamp: number): string {
+  return new Date(timestamp).toLocaleString('zh-CN', { hour12: false });
+}
+
 export default function App() {
-  const [leftText, setLeftText] = useState('');
-  const [rightText, setRightText] = useState('');
+  // 首次渲染前读取草稿：只还原原始文本，接缝/对位/错误仍由下方 useMemo 即时重算
+  const [initialLoad] = useState<DraftLoadOutcome>(() => {
+    const storage = getStorage();
+    return storage === null ? { kind: 'unavailable' } : loadDraft(storage);
+  });
+  const restoredDraft = initialLoad.kind === 'ok' ? initialLoad.draft : null;
+
+  const [leftText, setLeftText] = useState(restoredDraft?.leftText ?? '');
+  const [rightText, setRightText] = useState(restoredDraft?.rightText ?? '');
+  const [restoredAt, setRestoredAt] = useState<number | null>(restoredDraft?.savedAt ?? null);
+  const [draftProblem, setDraftProblem] = useState<'invalid' | 'unavailable' | null>(() => {
+    if (initialLoad.kind === 'invalid') return 'invalid';
+    if (initialLoad.kind === 'unavailable') return 'unavailable';
+    return null;
+  });
+
+  // 文本变化后保存原始内容与更新时间；首次渲染（含恢复）不重复落盘
+  const skipInitialSave = useRef(true);
+  useEffect(() => {
+    if (skipInitialSave.current) {
+      skipInitialSave.current = false;
+      return;
+    }
+    const storage = getStorage();
+    if (storage !== null) {
+      saveDraft(storage, { leftText, rightText, savedAt: Date.now() });
+    }
+  }, [leftText, rightText]);
 
   // 结果完全由当前输入推导：任何非法输入都会立即替换掉旧的接卷结果
   const outcome = useMemo(() => computeSplice(leftText, rightText), [leftText, rightText]);
+
+  const handleClearDraft = () => {
+    setLeftText('');
+    setRightText('');
+    setRestoredAt(null);
+    const storage = getStorage();
+    if (storage !== null) removeDraft(storage);
+  };
 
   return (
     <div className="app">
@@ -185,6 +239,39 @@ export default function App() {
           />
         </label>
       </section>
+
+      {(restoredAt !== null || draftProblem !== null) && (
+        <div className="draft-bar">
+          {restoredAt !== null && (
+            <p className="draft-notice" data-testid="draft-restored">
+              已恢复 {formatSavedAt(restoredAt)} 保存的草稿，结果已按当前内容重新计算。
+              <button
+                type="button"
+                className="draft-action"
+                data-testid="clear-draft"
+                onClick={handleClearDraft}
+              >
+                清空草稿
+              </button>
+            </p>
+          )}
+          {draftProblem !== null && (
+            <p className="draft-warning" data-testid="draft-problem" role="alert">
+              {draftProblem === 'unavailable'
+                ? '浏览器本地存储不可用，本次输入不会被保存为草稿。'
+                : '检测到已损坏的草稿，已忽略；请直接粘贴帧码继续核验。'}
+              <button
+                type="button"
+                className="draft-action"
+                data-testid="draft-problem-dismiss"
+                onClick={() => setDraftProblem(null)}
+              >
+                关闭
+              </button>
+            </p>
+          )}
+        </div>
+      )}
 
       {outcome.status === 'idle' && (
         <p className="hint" data-testid="idle-hint">

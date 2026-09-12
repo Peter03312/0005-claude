@@ -91,6 +91,53 @@ textarea:focus {
   padding: 24px 0;
 }
 
+.draft-bar {
+  margin: -4px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.draft-notice,
+.draft-warning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.draft-notice {
+  background: #e8f1fc;
+  border: 1px solid var(--accent);
+  color: var(--ink);
+}
+
+.draft-warning {
+  background: #fdf0ee;
+  border: 1px solid var(--err);
+  color: var(--err);
+}
+
+.draft-action {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.draft-action:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
