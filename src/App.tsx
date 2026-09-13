@@ -180,6 +180,10 @@ export default function App() {
     if (initialLoad.kind === 'unavailable') return 'unavailable';
     return null;
   });
+  // 存储可读但本次写入失败：警告本次输入未保存；写入恢复成功后自动撤销
+  const [unsaved, setUnsaved] = useState(false);
+  // 清空（移除草稿）被存储拒绝：警告清空失败，界面内容保持与存储一致
+  const [clearFailed, setClearFailed] = useState(false);
 
   // 文本变化后保存原始内容与更新时间；首次渲染（含恢复）不重复落盘
   const skipInitialSave = useRef(true);
@@ -189,20 +193,29 @@ export default function App() {
       return;
     }
     const storage = getStorage();
-    if (storage !== null) {
-      saveDraft(storage, { leftText, rightText, savedAt: Date.now() });
-    }
+    if (storage === null) return;
+    const ok = saveDraft(storage, { leftText, rightText, savedAt: Date.now() });
+    setUnsaved(!ok);
+    if (ok) setClearFailed(false);
   }, [leftText, rightText]);
 
   // 结果完全由当前输入推导：任何非法输入都会立即替换掉旧的接卷结果
   const outcome = useMemo(() => computeSplice(leftText, rightText), [leftText, rightText]);
 
+  const hasInput = leftText !== '' || rightText !== '';
+
   const handleClearDraft = () => {
+    const storage = getStorage();
+    // 存储拒绝删除时不清空界面：保证所见内容与仍保存在浏览器中的草稿一致
+    if (storage !== null && !removeDraft(storage)) {
+      setClearFailed(true);
+      return;
+    }
     setLeftText('');
     setRightText('');
     setRestoredAt(null);
-    const storage = getStorage();
-    if (storage !== null) removeDraft(storage);
+    setClearFailed(false);
+    setUnsaved(false);
   };
 
   return (
@@ -240,18 +253,49 @@ export default function App() {
         </label>
       </section>
 
-      {(restoredAt !== null || draftProblem !== null) && (
+      <div className="input-actions">
+        <button
+          type="button"
+          className="clear-inputs"
+          data-testid="clear-draft"
+          onClick={handleClearDraft}
+          disabled={!hasInput}
+          title="清空两侧输入、恢复提示与计算结果，并删除浏览器中已保存的草稿"
+        >
+          清空草稿（清空输入、提示与计算结果）
+        </button>
+      </div>
+
+      {(restoredAt !== null || draftProblem !== null || unsaved || clearFailed) && (
         <div className="draft-bar">
           {restoredAt !== null && (
             <p className="draft-notice" data-testid="draft-restored">
               已恢复 {formatSavedAt(restoredAt)} 保存的草稿，结果已按当前内容重新计算。
+            </p>
+          )}
+          {unsaved && (
+            <p className="draft-warning" data-testid="unsaved-warning" role="alert">
+              浏览器本地存储写入失败，本次输入未保存，刷新后将无法恢复。
               <button
                 type="button"
                 className="draft-action"
-                data-testid="clear-draft"
-                onClick={handleClearDraft}
+                data-testid="unsaved-dismiss"
+                onClick={() => setUnsaved(false)}
               >
-                清空草稿
+                关闭
+              </button>
+            </p>
+          )}
+          {clearFailed && (
+            <p className="draft-warning" data-testid="clear-failed" role="alert">
+              清空草稿失败：浏览器拒绝删除本地存储中的草稿，两侧输入、提示与计算结果均保持不变。
+              <button
+                type="button"
+                className="draft-action"
+                data-testid="clear-failed-dismiss"
+                onClick={() => setClearFailed(false)}
+              >
+                关闭
               </button>
             </p>
           )}

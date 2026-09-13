@@ -91,6 +91,34 @@ textarea:focus {
   padding: 24px 0;
 }
 
+.input-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 16px;
+}
+
+.clear-inputs {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.clear-inputs:hover:not(:disabled) {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.clear-inputs:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .draft-bar {
   margin: -4px 0 16px;
   display: flex;

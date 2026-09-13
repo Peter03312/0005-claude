@@ -69,6 +69,21 @@ describe('decodeDraft：拒绝损坏或类型不符的数据', () => {
   ])('拒绝字段类型不符：%s', (_label, obj) => {
     expect(decodeDraft(JSON.stringify(obj))).toBeNull();
   });
+
+  it.each([
+    ['超过 Date 上限', 8.64e15 + 1],
+    ['低于 Date 下限', -8.64e15 - 1],
+    ['极大的有限数字', 1e17],
+    ['极小的负有限数字', -1e17],
+  ])('拒绝超出可格式化时间范围的 savedAt（%s）', (_label, savedAt) => {
+    const raw = JSON.stringify({ version: 1, leftText: '', rightText: '', savedAt });
+    expect(decodeDraft(raw)).toBeNull();
+  });
+
+  it('Date 毫秒边界上的 savedAt 仍可还原（边界内不算损坏）', () => {
+    const raw = JSON.stringify({ version: 1, leftText: '', rightText: '', savedAt: 8.64e15 });
+    expect(decodeDraft(raw)).toEqual({ leftText: '', rightText: '', savedAt: 8.64e15 });
+  });
 });
 
 describe('loadDraft：读取草稿', () => {
@@ -89,6 +104,13 @@ describe('loadDraft：读取草稿', () => {
   it('字段类型不符时返回 invalid', () => {
     const storage = memoryStorage({
       [DRAFT_STORAGE_KEY]: JSON.stringify({ version: 1, leftText: '', rightText: '', savedAt: '昨天' }),
+    });
+    expect(loadDraft(storage)).toEqual({ kind: 'invalid' });
+  });
+
+  it('savedAt 超出可格式化时间范围时返回 invalid 而不是恢复出无效日期', () => {
+    const storage = memoryStorage({
+      [DRAFT_STORAGE_KEY]: JSON.stringify({ version: 1, leftText: 'AB000001', rightText: '', savedAt: 1e17 }),
     });
     expect(loadDraft(storage)).toEqual({ kind: 'invalid' });
   });
@@ -129,12 +151,16 @@ describe('saveDraft / removeDraft：写入与清除', () => {
       },
     };
     expect(saveDraft(storage, sample)).toBe(false);
-    expect(() => removeDraft(storage)).not.toThrow();
+    expect(removeDraft(storage)).toBe(false);
   });
 
-  it('removeDraft 移除已保存的草稿', () => {
+  it('removeDraft 移除成功时返回 true', () => {
     const storage = memoryStorage({ [DRAFT_STORAGE_KEY]: encodeDraft(sample) });
-    removeDraft(storage);
+    expect(removeDraft(storage)).toBe(true);
     expect(loadDraft(storage)).toEqual({ kind: 'none' });
+  });
+
+  it('removeDraft 在无草稿时也返回 true', () => {
+    expect(removeDraft(memoryStorage())).toBe(true);
   });
 });

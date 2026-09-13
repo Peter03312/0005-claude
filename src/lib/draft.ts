@@ -43,9 +43,14 @@ export function encodeDraft(draft: SpliceDraft): string {
   });
 }
 
+/** 可在界面上合法展示的保存时间范围（Date 毫秒上下限），超出即判损坏 */
+const MIN_SAVED_AT = -8_640_000_000_000_000;
+const MAX_SAVED_AT = 8_640_000_000_000_000;
+
 /**
  * 校验并还原草稿。结构、版本或任一字段类型不符时返回 null，
- * 绝不尝试修补或部分采纳损坏数据。
+ * 绝不尝试修补或部分采纳损坏数据。savedAt 超出 Date 可表达范围
+ * （无法格式化为有效时间）时同样判为损坏。
  */
 export function decodeDraft(raw: string): SpliceDraft | null {
   let data: unknown;
@@ -62,6 +67,7 @@ export function decodeDraft(raw: string): SpliceDraft | null {
   if (typeof record.leftText !== 'string') return null;
   if (typeof record.rightText !== 'string') return null;
   if (typeof record.savedAt !== 'number' || !Number.isFinite(record.savedAt)) return null;
+  if (record.savedAt < MIN_SAVED_AT || record.savedAt > MAX_SAVED_AT) return null;
   return { leftText: record.leftText, rightText: record.rightText, savedAt: record.savedAt };
 }
 
@@ -95,11 +101,12 @@ export function saveDraft(storage: DraftStorage, draft: SpliceDraft): boolean {
   }
 }
 
-/** 移除草稿；存储不可用时静默忽略 */
-export function removeDraft(storage: DraftStorage): void {
+/** 移除草稿；存储拒绝删除时静默捕获并返回 false，由调用方决定如何告知操作员 */
+export function removeDraft(storage: DraftStorage): boolean {
   try {
     storage.removeItem(DRAFT_STORAGE_KEY);
+    return true;
   } catch {
-    // 忽略：清空失败不阻断页面使用
+    return false;
   }
 }
